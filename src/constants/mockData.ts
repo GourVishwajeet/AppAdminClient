@@ -92,6 +92,38 @@ export interface LiveUserData {
   country: string;
 }
 
+export interface StoryManagementData {
+  userName: {
+    name: string;
+    email: string;
+    avatar: string;
+  };
+  storyId: string;
+  collaboration: string;
+  uploadTime: string;
+  nonFollowers: string;
+  followers: string;
+  storyViewer: string;
+  storyViewerChange: string;
+  totalLikes: string;
+}
+
+export interface AudienceManagementData {
+  userName: {
+    name: string;
+    email: string;
+    avatar: string;
+  };
+  aiUserId: string;
+  mobileNo: string;
+  gender: string;
+  dateOfBirth: string;
+  country: string;
+  status: string;
+  post: number;
+  dailyActiveTime: string;
+}
+
 export const mockInfluencers: InfluencerData[] = [
   {
     userName: { name: 'John Doe', email: 'johnsot2@gmail.com', avatar: user },
@@ -379,3 +411,27 @@ export const mockComments: CommentData[] = [
     ]
   },
 ];
+
+export const mockStoryManagement: StoryManagementData[] = mockInfluencers.map((influencer, index) => ({
+  userName: influencer.userName,
+  storyId: `S${String(index + 1).padStart(3, '0')}`,
+  collaboration: ['Brand X', 'Fashion Hub', 'Tech Corp', 'Beauty Plus', 'Sports Gear', 'Food Network', 'Music Studio', 'Travel Agency', 'Fitness Pro', 'Art Gallery', 'Auto World', 'Lifestyle Co'][index % 12],
+  uploadTime: ['2 hours ago', '4 hours ago', '6 hours ago', '8 hours ago', '12 hours ago', '1 day ago', '1 day ago', '2 days ago', '2 days ago', '3 days ago', '3 days ago', '4 days ago'][index % 12],
+  nonFollowers: ['12k', '15k', '8k', '20k', '10k', '18k', '14k', '22k', '9k', '16k', '11k', '19k'][index % 12],
+  followers: ['45k', '50k', '35k', '60k', '40k', '55k', '48k', '65k', '38k', '52k', '42k', '58k'][index % 12],
+  storyViewer: ['57k', '65k', '43k', '80k', '50k', '73k', '62k', '87k', '47k', '68k', '53k', '77k'][index % 12],
+  storyViewerChange: ['+3.5k', '-2.1k', '+1.8k', '-0.5k', '+5.2k', '-1.2k', '+2.9k', '-3.4k', '+0.9k', '-1.5k', '+4.1k', '-2.8k'][index % 12],
+  totalLikes: influencer.totalLikes
+}));
+
+export const mockAudienceManagement: AudienceManagementData[] = mockInfluencers.map((influencer, index) => ({
+  userName: influencer.userName,
+  aiUserId: influencer.aiUserId,
+  mobileNo: influencer.mobileNo,
+  gender: influencer.gender,
+  dateOfBirth: influencer.dateOfBirth,
+  country: influencer.country,
+  status: influencer.status,
+  post: influencer.posts,
+  dailyActiveTime: ['2h 30m', '1h 45m', '3h 15m', '4h 00m', '0h 50m', '5h 20m', '2h 10m', '1h 30m', '3h 45m', '2h 55m', '4h 30m', '1h 15m', '3h 00m', '2h 45m', '0h 30m'][index % 15]
+}));

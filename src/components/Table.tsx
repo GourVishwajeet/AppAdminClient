@@ -8,6 +8,7 @@ export interface TableColumn {
   className?: string;
   width?: string;
   render?: (value: any, row: any) => React.ReactNode;
+  headerRender?: (column: TableColumn) => React.ReactNode;
 }
 
 export interface TableProps {
@@ -72,14 +73,18 @@ export const Table: FC<TableProps> = ({
                   key={column.key}
                   className={`px-8 py-4 text-left text-sm font-medium text-[#F8FAFF] ${column.className || 'whitespace-nowrap'} ${column.width || 'whitespace-nowrap'}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{column.label}</span>
-                    <img
-                      src={arrowDownIcon}
-                      alt="Sort"
-                      className={`w-4 h-4 ${column.key === 'userName' ? 'ml-4 mr-2' : 'ml-2 mr-2'}`}
-                    />
-                  </div>
+                  {column.headerRender ? (
+                    column.headerRender(column)
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span>{column.label}</span>
+                      <img
+                        src={arrowDownIcon}
+                        alt="Sort"
+                        className={`w-4 h-4 ${column.key === 'userName' ? 'ml-4 mr-2' : 'ml-2 mr-2'}`}
+                      />
+                    </div>
+                  )}
                 </th>
               ))}
             </tr>

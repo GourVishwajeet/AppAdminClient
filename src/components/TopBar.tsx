@@ -1,15 +1,15 @@
 import type { FC } from 'react';
+import { useState } from 'react';
 import searchIcon from '../assets/search.svg';
 import filtersIcon from '../assets/filters.svg';
+import { FilterModal } from './FilterModal';
 
 interface TopBarProps {
   heading: string;
 }
 
 export const TopBar: FC<TopBarProps> = ({ heading }) => {
-  const handleFilter = () => {
-    // Filter functionality
-  };
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   return (
     <div className="px-6 py-4">
@@ -29,13 +29,24 @@ export const TopBar: FC<TopBarProps> = ({ heading }) => {
           </div>
           
           {/* Filter Button */}
-          <button
-            onClick={handleFilter}
-            className="w-[98px] h-[40px] flex items-center justify-center gap-2 px-4 py-2 border border-[#2A2A2A] rounded-[10px] text-[14px] font-medium text-[#BCBCBC] hover:bg-[#2A2A2A] hover:text-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#2A2A2A] focus:border-transparent transition-colors"
-          >
-            <img src={filtersIcon} alt="Filters" className="w-[20px] h-[20px] object-contain" />
-            Filters
-          </button>
+          <div className="relative cursor-pointer">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`w-[98px] h-[40px] flex items-center justify-center gap-2 px-4 py-2 border border-[#2A2A2A] rounded-[10px] text-[14px] font-medium transition-colors cursor-pointer ${
+                isFilterOpen 
+                  ? 'bg-[#2A2A2A] text-[#FFFFFF]' 
+                  : 'text-[#BCBCBC] hover:bg-[#2A2A2A] hover:text-[#FFFFFF]'
+              }`}
+            >
+              <img src={filtersIcon} alt="Filters" className="w-[20px] h-[20px] object-contain" />
+              Filters
+            </button>
+            
+            <FilterModal 
+              isOpen={isFilterOpen} 
+              onClose={() => setIsFilterOpen(false)} 
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -22,7 +22,7 @@ export const ThirdLevelPanel: FC<ThirdLevelPanelProps> = ({
   if (!visible) return null;
 
   // Calculate left position based on sidebar state
-  const leftPosition = isSidebarCollapsed ? 'left-[346px]' : 'left-[500px]';
+  const leftPosition = isSidebarCollapsed ? 'left-[343px]' : 'left-[500px]';
 
   return (
     <div

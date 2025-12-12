@@ -13,9 +13,11 @@ import leadsIcon from '../assets/leads.svg';
 import logoutIcon from '../assets/logout.svg';
 import arrowRightIcon from '../assets/arrow-right.svg';
 import arrowIcon from '../assets/arrow.svg';
+import notificationsIcon from '../assets/notifications.svg';
 
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: dashboardIcon },
+  { id: 'activity', label: 'Activity', icon: notificationsIcon },
   { id: 'audience', label: 'Audience', icon: audienceIcon },
   { id: 'reports', label: 'Reports', icon: reportsIcon },
   { id: 'campaigns', label: 'Campaigns', icon: campaignsIcon },
@@ -35,6 +37,7 @@ const audienceSubItems = [
 
 const userManagementSubItems = [
   { id: 'top-influencer', label: 'Top Influencer' },
+  { id: 'audience-management', label: 'Audience Management' },
   { id: 'audience-mgmt', label: 'User Profile' },
 ];
 
@@ -64,7 +67,11 @@ interface SidebarProps {
     | 'reported-posts'
     | 'boosted-posts'
     | 'live-users'
-    | 'post-management';
+    | 'post-management'
+    | 'story-management'
+    | 'story-management'
+    | 'audience-management'
+    | 'activity';
   setCurrentPage: (
     page:
       | 'top-influencer'
@@ -73,7 +80,10 @@ interface SidebarProps {
       | 'reported-posts'
       | 'boosted-posts'
       | 'live-users'
-      | 'post-management',
+      | 'post-management'
+      | 'story-management'
+      | 'audience-management'
+      | 'activity',
   ) => void;
 }
 
@@ -137,6 +147,9 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
                 } else {
                   setActiveId(item.id);
                   closeAllSubmenus();
+                  if (item.id === 'activity') {
+                    setCurrentPage('activity');
+                  }
                 }
               }}
               className={
@@ -267,7 +280,12 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
         topClass="top-[162px]"
         items={storyManagementSubItems}
         activeId={activeStoryMgmtSubId}
-        onChange={setActiveStoryMgmtSubId}
+         onChange={(id) => {
+          setActiveStoryMgmtSubId(id);
+          if (id === 'all-stories') {
+            setCurrentPage('story-management');
+          }
+        }}
         isSidebarCollapsed={isCollapsed}
       />
       <ThirdLevelPanel
@@ -304,6 +322,8 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
             setCurrentPage('top-influencer');
           } else if (id === 'audience-mgmt') {
             setCurrentPage('user-profile');
+          } else if (id === 'audience-management') {
+            setCurrentPage('audience-management');
           }
         }}
         isSidebarCollapsed={isCollapsed}

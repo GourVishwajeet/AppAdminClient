@@ -8,6 +8,9 @@ import { BoostedPost } from './pages/BoostedPost'
 import { LiveUsersList } from './pages/Users/LiveUsersList'
 import { PostManagement } from './pages/PostManagement'
 import { useState } from 'react'
+import { StoryManagement } from './pages/StoryManagment'
+import { AudienceManagement } from './pages/Users/AudienceManagment'
+import { Activity } from './pages/Activity'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<
@@ -18,6 +21,9 @@ function App() {
     | 'boosted-posts'
     | 'live-users'
     | 'post-management'
+    | 'story-management'
+    | 'audience-management'
+    | 'activity'
   >('top-influencer')
 
   const renderPage = () => {
@@ -39,6 +45,15 @@ function App() {
 
       case 'post-management':
         return <PostManagement />
+
+      case 'story-management':
+        return <StoryManagement />
+
+      case 'audience-management':
+        return <AudienceManagement />
+
+      case 'activity':
+        return <Activity />
       
       case 'top-influencer':
       default:
@@ -47,11 +62,11 @@ function App() {
   }
 
   return (
-    <div className="h-screen overflow-auto flex flex-col bg-black text-white">
+    <div className="h-screen overflow-hidden flex flex-col bg-black text-white">
       <Header />
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <main className="flex-1 bg-neutral-950">
+        <main className="flex-1 relative h-full">
           {renderPage()}
         </main>
       </div>

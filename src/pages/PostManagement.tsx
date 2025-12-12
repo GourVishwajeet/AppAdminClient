@@ -138,10 +138,6 @@ export const PostManagement: FC = () => {
               isOpen={isCommentsModalOpen} 
               onClose={() => setIsCommentsModalOpen(false)} 
             />
-
-            <div className="flex justify-center items-center">
-            <PostAnalysisPopup />
-            </div>
           </div>
         </main>
       </div>
