@@ -326,7 +326,7 @@ export const mockReportedPosts: ReportedPostData[] = mockInfluencers.slice(0, 8)
   trafficRatio: ['85%', '78%', '92%', '73%', '88%', '81%', '76%', '84%'][index],
   likeRatio: ['92%', '88%', '95%', '81%', '90%', '87%', '83%', '89%'][index],
   userTraffic: influencer.userTraffic,
-  reports: [15, 8, 23, 5, 12, 19, 7, 11][index],
+  reports: [10, 20, 4, 6, 12, 19, 7, 11][index],
   totalLikes: influencer.totalLikes
 }));
 
@@ -416,7 +416,7 @@ export const mockStoryManagement: StoryManagementData[] = mockInfluencers.map((i
   userName: influencer.userName,
   storyId: `S${String(index + 1).padStart(3, '0')}`,
   collaboration: ['Brand X', 'Fashion Hub', 'Tech Corp', 'Beauty Plus', 'Sports Gear', 'Food Network', 'Music Studio', 'Travel Agency', 'Fitness Pro', 'Art Gallery', 'Auto World', 'Lifestyle Co'][index % 12],
-  uploadTime: ['2 hours ago', '4 hours ago', '6 hours ago', '8 hours ago', '12 hours ago', '1 day ago', '1 day ago', '2 days ago', '2 days ago', '3 days ago', '3 days ago', '4 days ago'][index % 12],
+  uploadTime: ['07-04-2025', '06-04-2025', '05-04-2025', '04-04-2025', '03-04-2025', '02-04-2025', '01-04-2025', '31-03-2025', '30-03-2025', '29-03-2025', '28-03-2025', '27-03-2025'][index % 12],
   nonFollowers: ['12k', '15k', '8k', '20k', '10k', '18k', '14k', '22k', '9k', '16k', '11k', '19k'][index % 12],
   followers: ['45k', '50k', '35k', '60k', '40k', '55k', '48k', '65k', '38k', '52k', '42k', '58k'][index % 12],
   storyViewer: ['57k', '65k', '43k', '80k', '50k', '73k', '62k', '87k', '47k', '68k', '53k', '77k'][index % 12],
@@ -434,4 +434,45 @@ export const mockAudienceManagement: AudienceManagementData[] = mockInfluencers.
   status: influencer.status,
   post: influencer.posts,
   dailyActiveTime: ['2h 30m', '1h 45m', '3h 15m', '4h 00m', '0h 50m', '5h 20m', '2h 10m', '1h 30m', '3h 45m', '2h 55m', '4h 30m', '1h 15m', '3h 00m', '2h 45m', '0h 30m'][index % 15]
+}));
+
+export interface ActivityTableData {
+  activityName: string;
+  user: {
+    name: string;
+    avatar: string;
+  };
+  status: string;
+  date: string;
+  time: string;
+  comments: number;
+  likes: string;
+  shared: string;
+}
+
+export const mockActivityTableData: ActivityTableData[] = mockInfluencers.slice(0, 10).map((influencer, index) => ({
+  activityName: ['Project Launch', 'Design Review', 'Client Meeting', 'Code Merge', 'Sprint Planning', 'Bug Fix', 'Database Migration', 'UI Update', 'Marketing Campaign', 'User Research'][index % 10],
+  user: influencer.userName,
+  status: ['In Progress', 'Completed', 'Pending', 'In Progress', 'Completed', 'Pending', 'In Progress', 'Completed', 'Pending', 'In Progress'][index % 10],
+  date: ['12 Dec 2024', '11 Dec 2024', '10 Dec 2024', '09 Dec 2024', '08 Dec 2024', '07 Dec 2024', '06 Dec 2024', '05 Dec 2024', '04 Dec 2024', '03 Dec 2024'][index % 10],
+  time: ['10:00 AM', '11:30 AM', '02:00 PM', '04:15 PM', '09:00 AM', '01:45 PM', '03:30 PM', '05:00 PM', '10:15 AM', '12:00 PM'][index % 10],
+  comments: [5, 12, 3, 8, 15, 2, 9, 6, 11, 4][index % 10],
+  likes: ['1.2k', '2.5k', '800', '1.5k', '3.0k', '500', '1.8k', '1.1k', '2.2k', '900'][index % 10],
+  shared: ['45', '120', '30', '60', '150', '20', '80', '40', '100', '35'][index % 10]
+}));
+
+export interface ActivityGridData {
+  title: string;
+  user: string;
+  image: string;
+  avatars: string[];
+  comments: string;
+}
+
+export const mockActivityGridData: ActivityGridData[] = Array(12).fill(null).map((_, index) => ({
+  title: ['Modern City Architecture', 'Abstract Art Exhibition', 'Tech Conference 2024', 'Nature Photography Workshop', 'UX Design Trends', 'Mobile App Launch', 'Startup Summit', 'Digital Marketing Strategy', 'Creative Writing Class', 'AI Innovation Lab', 'Sustainable Living', 'Future of Work'][index % 12],
+  user: 'Harshad_007',
+  image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+  avatars: [user, user, user, user],
+  comments: '5 comments'
 }));

@@ -10,15 +10,55 @@ import { mockLiveUsers, type LiveUserData } from '../../constants/mockData';
 import { Table, type TableColumn } from '../../components/Table';
 import { TopBar } from '../../components/TopBar';
 import { Pagination } from '../../components/Pagination';
+import { PageWrapper } from '../../components/PageWrapper';
+import { DropdownFilter } from '../../components/DropdownFilter';
+import { DateRangePicker } from '../../components/DateRangePicker';
+import { parse, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
 export const LiveUsersList: FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedItems, setSelectedItems] = useState<LiveUserData[]>([]);
+
+  
+  const [currentCollaborationFilter, setCurrentCollaborationFilter] = useState('All');
+  const [currentCountryFilter, setCurrentCountryFilter] = useState('All');
+  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+
   const itemsPerPage = 10;
 
-  // For now, using all data without filtering since search input was removed
-  const filteredData = mockLiveUsers;
+  // Filter logic
+  const filteredData = mockLiveUsers.filter(item => {
+    // Search filter
+    const matchesSearch = 
+      item.userName.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.userName.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.collaboration.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.traffic.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.country.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Dropdown filters
+    const matchesCollaboration = currentCollaborationFilter === 'All' || item.collaboration === currentCollaborationFilter;
+    const matchesCountry = currentCountryFilter === 'All' || item.country === currentCountryFilter;
+
+    // Date Range Filter
+    let matchesDate = true;
+    if (dateRange.start && dateRange.end) {
+      try {
+        const itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
+        matchesDate = isWithinInterval(itemDate, { 
+          start: startOfDay(dateRange.start), 
+          end: endOfDay(dateRange.end) 
+        });
+      } catch (error) {
+        console.error("Date parsing error", error);
+        matchesDate = false;
+      }
+    }
+
+    return matchesSearch && matchesCollaboration && matchesCountry && matchesDate;
+  });
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
@@ -52,8 +92,34 @@ export const LiveUsersList: FC = () => {
       )
     },
     { key: 'userId', label: 'User ID', width: 'w-[130px] pl-6' },
-    { key: 'collaboration', label: 'Collaboration', className: 'pl-4' },
-    { key: 'date', label: 'Date', className: 'pl-4' },
+    { 
+      key: 'collaboration', 
+      label: 'Collaboration', 
+      className: 'pl-4',
+      headerRender: (column) => {
+        const uniqueCollaborations = Array.from(new Set(mockLiveUsers.map(i => i.collaboration))).sort();
+        return (
+          <DropdownFilter
+            label={column.label}
+            options={uniqueCollaborations}
+            activeValue={currentCollaborationFilter}
+            onSelect={setCurrentCollaborationFilter}
+            searchable={true}
+          />
+        );
+      }
+    },
+    { 
+      key: 'date', 
+      label: 'Date', 
+      className: 'pl-4',
+      headerRender: (column) => (
+        <DateRangePicker 
+          label={column.label} 
+          onApply={setDateRange}
+        />
+      )
+    },
     { key: 'startTime', label: 'Start Time', className: 'pl-4' },
     { key: 'endTime', label: 'End Time', className: 'pl-4' },
     {
@@ -78,7 +144,23 @@ export const LiveUsersList: FC = () => {
         );
       }
     },
-    { key: 'country', label: 'Country', className: 'pl-4' },
+    { 
+      key: 'country', 
+      label: 'Country', 
+      className: 'pl-4',
+      headerRender: (column) => {
+        const uniqueCountries = Array.from(new Set(mockLiveUsers.map(i => i.country))).sort();
+        return (
+          <DropdownFilter
+            label={column.label}
+            options={uniqueCountries}
+            activeValue={currentCountryFilter}
+            onSelect={setCurrentCountryFilter}
+            searchable={true}
+          />
+        );
+      }
+    },
     {
       key: 'actions',
       label: 'Action',
@@ -103,10 +185,14 @@ export const LiveUsersList: FC = () => {
   ];
 
   return (
-    <div className="h-screen overflow-auto flex flex-col bg-[#4D54640D]">
+    <PageWrapper>
       <div className="flex flex-1">
         <main className="flex-1 bg-[#4D54640D]">
-          <TopBar heading="Live Users List" />
+          <TopBar 
+            heading="Live Users List" 
+            onSearch={setSearchTerm}
+            searchValue={searchTerm}
+          />
           
           {/* Content Area */}
           <div className="p-6">
@@ -132,6 +218,6 @@ export const LiveUsersList: FC = () => {
           </div>
         </main>
       </div>
-    </div>
+    </PageWrapper>
   );
 };

@@ -4,10 +4,11 @@ import { PostManagement } from '../../components/PostManagement';
 import { PostGrid } from '../../components/PostGrid';
 import userIcon from '../../assets/user-profile.svg';
 import editIcon from '../../assets/edit.svg';
+import { PageWrapper } from '../../components/PageWrapper';
 
 export const UserProfile: FC = () => {
   return (
-    <div className="h-full overflow-hidden">
+    <PageWrapper className="h-full !overflow-hidden">
       <TopBar heading="User Profile" />
       
       {/* Content Area */}
@@ -102,6 +103,6 @@ export const UserProfile: FC = () => {
               </div>
             </div>
           </div>
-    </div>
+    </PageWrapper>
   );
 };

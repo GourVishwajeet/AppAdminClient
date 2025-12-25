@@ -6,13 +6,15 @@ import { FilterModal } from './FilterModal';
 
 interface TopBarProps {
   heading: string;
+  onSearch?: (value: string) => void;
+  searchValue?: string;
 }
 
-export const TopBar: FC<TopBarProps> = ({ heading }) => {
+export const TopBar: FC<TopBarProps> = ({ heading, onSearch, searchValue }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   return (
-    <div className="px-6 py-4">
+    <div className="px-6 py-4 relative">
       <div className="flex items-center justify-between">
         <h1 className="text-[18px] font-semibold text-[#FFFFFF]">{heading}</h1>
         <div className="flex items-center gap-4">
@@ -24,6 +26,8 @@ export const TopBar: FC<TopBarProps> = ({ heading }) => {
             <input
               type="text"
               placeholder="Search category..."
+              value={searchValue}
+              onChange={(e) => onSearch?.(e.target.value)}
               className="block w-[557px] h-[40px] pl-10 pr-3 py-2 border border-[#2A2A2A] rounded-[10px] text-[14px] font-regular text-[#BCBCBC] placeholder-[#BCBCBC] focus:outline-none focus:ring-2 focus:ring-[#2A2A2A] focus:border-transparent"
             />
           </div>

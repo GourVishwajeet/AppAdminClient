@@ -10,6 +10,8 @@ import blockIcon from '../assets/block.svg';
 import trashIcon from '../assets/trash.svg';
 import { CommentsSideModal } from '../components/CommentsSideModal';
 import { PostAnalysisPopup } from '../components/PostAnalysisPopup';
+import { PageWrapper } from '../components/PageWrapper';
+import { DropdownFilter } from '../components/DropdownFilter';
 
 const CellWithAnalysis: FC<{ value: string | number }> = ({ value }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,12 +34,27 @@ const CellWithAnalysis: FC<{ value: string | number }> = ({ value }) => {
 export const PostManagement: FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedItems, setSelectedItems] = useState<PostManagementData[]>([]);
+
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
+  const [currentCollaborationFilter, setCurrentCollaborationFilter] = useState('All');
+  const [currentUploadTimeFilter, setCurrentUploadTimeFilter] = useState('All');
   const itemsPerPage = 10;
 
-  // For now, using all data without filtering since search input was removed
-  const filteredData = mockPostManagement;
+  // Filter logic
+  const filteredData = mockPostManagement.filter(item => {
+    // Search filter
+    const matchesSearch = 
+      item.userName.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.userName.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.postId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.collaboration.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Dropdown filters
+    const matchesCollaboration = currentCollaborationFilter === 'All' || item.collaboration === currentCollaborationFilter;
+    const matchesUploadTime = currentUploadTimeFilter === 'All' || item.uploadTime === currentUploadTimeFilter;
+
+    return matchesSearch && matchesCollaboration && matchesUploadTime;
+  });
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
@@ -45,10 +62,12 @@ export const PostManagement: FC = () => {
     currentPage * itemsPerPage
   );
 
-  const handleCheckboxChange = (checkedItems: PostManagementData[]) => {
-    setSelectedItems(checkedItems);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(new Set());
+
+  const handleSelectionChange = (keys: Set<string | number>) => {
+    setSelectedKeys(keys);
     // Log selected items for debugging/demonstration purposes
-    console.log('Selected posts:', checkedItems);
+    console.log('Selected post IDs:', Array.from(keys));
   };
 
   const columns: TableColumn[] = [
@@ -71,8 +90,39 @@ export const PostManagement: FC = () => {
       )
     },
     { key: 'postId', label: 'Post ID', width: 'w-[130px] pl-6' },
-    { key: 'collaboration', label: 'Collaboration', className: 'pl-4' },
-    { key: 'uploadTime', label: 'Upload Time', className: 'pl-4' },
+    { 
+      key: 'collaboration', 
+      label: 'Collaboration', 
+      className: 'pl-4',
+      headerRender: (column) => {
+        const uniqueCollaborations = Array.from(new Set(mockPostManagement.map(i => i.collaboration))).sort();
+        return (
+          <DropdownFilter
+            label={column.label}
+            options={uniqueCollaborations}
+            activeValue={currentCollaborationFilter}
+            onSelect={setCurrentCollaborationFilter}
+            searchable={true}
+          />
+        );
+      }
+    },
+    { 
+      key: 'uploadTime', 
+      label: 'Upload Time', 
+      className: 'pl-4',
+      headerRender: (column) => {
+        const uniqueTimes = Array.from(new Set(mockPostManagement.map(i => i.uploadTime))).sort();
+        return (
+          <DropdownFilter
+            label={column.label}
+            options={uniqueTimes}
+            activeValue={currentUploadTimeFilter}
+            onSelect={setCurrentUploadTimeFilter}
+          />
+        );
+      }
+    },
     { key: 'trafficRatio', label: 'Traffic Ratio', className: 'pl-4' },
     { key: 'totalComments', label: 'Total Comments', className: 'pl-4',
       render: (value) => <CellWithAnalysis value={value} /> },
@@ -107,10 +157,14 @@ export const PostManagement: FC = () => {
   ];
 
   return (
-    <div className="h-screen overflow-auto flex flex-col bg-[#4D54640D]">
+    <PageWrapper>
       <div className="flex flex-1">
         <main className="flex-1 bg-[#4D54640D]">
-          <TopBar heading="Post Management" />
+          <TopBar 
+            heading="Post Management" 
+            onSearch={setSearchTerm}
+            searchValue={searchTerm}
+          />
           
           {/* Content Area */}
           <div className="p-6">
@@ -120,7 +174,9 @@ export const PostManagement: FC = () => {
               columns={columns} 
               data={paginatedData} 
               showCheckbox={true}
-              onCheckboxChange={handleCheckboxChange}
+              rowKey="postId"
+              selectedKeys={selectedKeys}
+              onSelectionChange={handleSelectionChange}
             />
 
             {/* Pagination */}
@@ -141,6 +197,6 @@ export const PostManagement: FC = () => {
           </div>
         </main>
       </div>
-    </div>
+    </PageWrapper>
   );
 };

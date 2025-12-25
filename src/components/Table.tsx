@@ -16,6 +16,10 @@ export interface TableProps {
   data: any[];
   className?: string;
   showCheckbox?: boolean;
+  rowKey?: string;
+  selectedKeys?: Set<string | number>;
+  onSelectionChange?: (selectedKeys: Set<string | number>) => void;
+  // keeping this for backward compatibility if needed, but we should migrate away
   onCheckboxChange?: (checkedItems: any[]) => void;
 }
 
@@ -23,49 +27,97 @@ export const Table: FC<TableProps> = ({
   columns, 
   data, 
   className = '', 
-  showCheckbox = false, 
+  showCheckbox = false,
+  rowKey = 'id',
+  selectedKeys,
+  onSelectionChange,
   onCheckboxChange 
 }) => {
-  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
-  const [selectAll, setSelectAll] = useState(false);
+  // Local state for uncontrolled usage (fallback)
+  const [internalSelectedKeys, setInternalSelectedKeys] = useState<Set<string | number>>(new Set());
+  
+  const currentSelectedKeys = selectedKeys || internalSelectedKeys;
 
   const handleSelectAllChange = (checked: boolean) => {
-    setSelectAll(checked);
-    const newCheckedItems = checked 
-      ? new Set<number>(data.map((_, index) => index))
-      : new Set<number>();
-    setCheckedItems(newCheckedItems);
-    onCheckboxChange?.(checked ? data : []);
+    const newSelectedKeys = new Set(currentSelectedKeys);
+    
+    data.forEach((item) => {
+      const key = item[rowKey];
+      if (checked) {
+        newSelectedKeys.add(key);
+      } else {
+        newSelectedKeys.delete(key);
+      }
+    });
+
+    if (!selectedKeys) {
+      setInternalSelectedKeys(newSelectedKeys);
+    }
+    
+    onSelectionChange?.(newSelectedKeys);
+
+    // Legacy support (optional, can be removed if we migrate all usages)
+    if (onCheckboxChange) {
+       // This is expensive if we have all data, but usually data is just current page
+       // so this only returns selected items present in current data page if we just map data
+       // For true "global selection" with legacy callback, we can't easily reconstruction objects from just keys unless we have a lookup
+       // So we just return selected items from CURRENT page for now to satisfy interface
+       const selectedItems = data.filter(item => newSelectedKeys.has(item[rowKey]));
+       onCheckboxChange(selectedItems);
+    }
   };
 
-  const handleCheckboxChange = (index: number, checked: boolean) => {
-    const newCheckedItems = new Set<number>(checkedItems);
+  const handleCheckboxChange = (key: string | number, checked: boolean) => {
+    const newSelectedKeys = new Set(currentSelectedKeys);
     if (checked) {
-      newCheckedItems.add(index);
+      newSelectedKeys.add(key);
     } else {
-      newCheckedItems.delete(index);
+      newSelectedKeys.delete(key);
     }
-    setCheckedItems(newCheckedItems);
-    setSelectAll(newCheckedItems.size === data.length);
     
-    const selectedData = data.filter((_, i) => newCheckedItems.has(i));
-    onCheckboxChange?.(selectedData);
+    if (!selectedKeys) {
+      setInternalSelectedKeys(newSelectedKeys);
+    }
+    
+    onSelectionChange?.(newSelectedKeys);
+     
+    // Legacy support
+    if (onCheckboxChange) {
+        const selectedItems = data.filter(item => newSelectedKeys.has(item[rowKey]));
+        onCheckboxChange(selectedItems);
+    }
   };
+
+  // Check if all items on current page are selected
+  const allSelected = data.length > 0 && data.every(item => currentSelectedKeys.has(item[rowKey]));
+  // Check if at least one but not all are selected (indeterminate) - native checkbox supports this via ref, 
+  // but for simple custom UI we often just use checked/unchecked or a specific icon. 
+  // Here we just keep simple checked/unchecked for "Select All" based on if ALL are selected.
 
   return (
-    <div className={`shadow-sm overflow-auto ${className}`}>
+    <div className={`shadow-sm overflow-auto overflow-x-auto ${className}`}>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#515151]">
               {showCheckbox && (
                 <th className="px-2 py-4 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={(e) => handleSelectAllChange(e.target.checked)}
-                    className="w-[20px] h-[20px] bg-transparent appearance-none border border-gray-300 rounded-[6px] focus:ring-[#8000FF] cursor-pointer"
-                  />
+                  <div className="relative flex items-center justify-center w-[20px] h-[20px]">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={(e) => handleSelectAllChange(e.target.checked)}
+                      className="peer w-full h-full bg-transparent appearance-none border border-[#8B8B8B] rounded-[6px] checked:bg-[#8000FF] checked:border-[#8000FF] cursor-pointer transition-colors"
+                    />
+                    <svg 
+                      className="absolute w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" 
+                      viewBox="0 0 14 14" 
+                      fill="none" 
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
                 </th>
               )}
               {columns.map((column) => (
@@ -90,28 +142,41 @@ export const Table: FC<TableProps> = ({
             </tr>
           </thead>
           <tbody>
-            {data.map((row, index) => (
-              <tr
-                key={index}
-                className="border-b border-[#515151] hover:bg-[#1a1a1a] transition-colors"
-              >
-                {showCheckbox && (
-                  <td className="px-2 py-4 pt-7">
-                    <input
-                      type="checkbox"
-                      checked={checkedItems.has(index)}
-                      onChange={(e) => handleCheckboxChange(index, e.target.checked)}
-                      className="w-[20px] h-[20px] bg-transparent appearance-none border border-gray-300 rounded-[6px] focus:ring-[#8000FF] cursor-pointer"
-                    />
-                  </td>
-                )}
-                {columns.map((column) => (
-                  <td key={column.key} className={`px-8 py-4 text-sm ${column.width || 'whitespace-nowrap'} ${column.className || ''} ${column.key === 'status' ? 'text-left' : ''}`}>
-                    {column.render ? column.render(row[column.key], row) : row[column.key]}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {data.map((row, index) => {
+              const key = row[rowKey];
+              return (
+                <tr
+                  key={key}
+                  className="border-b border-[#515151] hover:bg-[#1a1a1a] transition-colors"
+                >
+                  {showCheckbox && (
+                    <td className="px-2 py-4 pt-7">
+                      <div className="relative flex items-center justify-center w-[20px] h-[20px]">
+                        <input
+                          type="checkbox"
+                          checked={currentSelectedKeys.has(key)}
+                          onChange={(e) => handleCheckboxChange(key, e.target.checked)}
+                          className="peer w-full h-full bg-transparent appearance-none border border-[#8B8B8B] rounded-[6px] checked:bg-[#8000FF] checked:border-[#8000FF] cursor-pointer transition-colors"
+                        />
+                        <svg 
+                          className="absolute w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" 
+                          viewBox="0 0 14 14" 
+                          fill="none" 
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </td>
+                  )}
+                  {columns.map((column) => (
+                    <td key={column.key} className={`px-8 py-4 text-sm ${column.width || 'whitespace-nowrap'} ${column.className || ''} ${column.key === 'status' ? 'text-left' : ''}`}>
+                      {column.render ? column.render(row[column.key], row) : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

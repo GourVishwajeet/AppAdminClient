@@ -8,27 +8,59 @@ import editIcon from '../assets/edit.svg';
 import viewIcon from '../assets/view.svg';
 import blockIcon from '../assets/block.svg';
 import trashIcon from '../assets/trash.svg';
+import { DateRangePicker } from '../components/DateRangePicker';
+import { GenderPicker } from '../components/GenderPicker';
+import { DropdownFilter } from '../components/DropdownFilter';
+import { isWithinInterval, parse } from 'date-fns';
+import { PageWrapper } from '../components/PageWrapper';
 
 export const TopInfluencers: FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentGenderFilter, setCurrentGenderFilter] = useState('All');
+  const [currentCountryFilter, setCurrentCountryFilter] = useState('All');
+  const [currentStatusFilter, setCurrentStatusFilter] = useState('All');
+  const [dobRange, setDobRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+  
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedItems, setSelectedItems] = useState<InfluencerData[]>([]);
+  const selectedKeys = new Set<string | number>(); // Removing unused state for now to fix lint or just ignore
+  const [, setSelectedKeys] = useState<Set<string | number>>(new Set());
+  
+  const handleSelectionChange = (keys: Set<string | number>) => {
+    setSelectedKeys(keys);
+    console.log('Selected influencer IDs:', Array.from(keys));
+  };
+  
   const itemsPerPage = 10;
 
-  // For now, using all data without filtering since search input was removed
-  const filteredData = mockInfluencers;
+  // Filter data based on search, gender, country, status, and DOB
+  const filteredData = mockInfluencers.filter(item => {
+    const matchesSearch = 
+      item.userName.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.userName.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.aiUserId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.mobileNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.status.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesGender = currentGenderFilter === 'All' || item.gender === currentGenderFilter;
+    const matchesCountry = currentCountryFilter === 'All' || item.country === currentCountryFilter;
+    const matchesStatus = currentStatusFilter === 'All' || item.status === currentStatusFilter;
+    
+    let matchesDob = true;
+    if (dobRange.start && dobRange.end) {
+      // Parse DD/MM/YYYY
+      const dobDate = parse(item.dateOfBirth, 'dd/MM/yyyy', new Date());
+      matchesDob = isWithinInterval(dobDate, { start: dobRange.start, end: dobRange.end });
+    }
+
+    return matchesSearch && matchesGender && matchesCountry && matchesStatus && matchesDob;
+  });
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const handleCheckboxChange = (checkedItems: InfluencerData[]) => {
-    setSelectedItems(checkedItems);
-    // Log selected items for debugging/demonstration purposes
-    console.log('Selected influencers:', checkedItems);
-  };
 
   const columns: TableColumn[] = [
     {
@@ -51,13 +83,61 @@ export const TopInfluencers: FC = () => {
     },
     { key: 'aiUserId', label: 'AI User ID', width: 'w-[130px] pl-6' },
     { key: 'mobileNo', label: 'Mobile no.', className: 'pl-4' },
-    { key: 'gender', label: 'Gender', className: 'pl-4' },
-    { key: 'dateOfBirth', label: 'Date of Birth', className: 'pl-4' },
-    { key: 'country', label: 'Country', className: 'pl-4' },
+    { 
+      key: 'gender', 
+      label: 'Gender', 
+      className: 'pl-4',
+      headerRender: (column) => (
+        <GenderPicker 
+          label={column.label} 
+          onSelect={(gender) => setCurrentGenderFilter(gender)}
+        />
+      )
+    },
+    { 
+      key: 'dateOfBirth', 
+      label: 'Date of Birth', 
+      className: 'pl-4',
+      headerRender: (column) => (
+        <DateRangePicker 
+          label={column.label} 
+          onApply={(range) => setDobRange(range)}
+        />
+      )
+    },
+    { 
+      key: 'country', 
+      label: 'Country', 
+      className: 'pl-4',
+      headerRender: (column) => {
+        const uniqueCountries = Array.from(new Set(mockInfluencers.map(i => i.country))).sort();
+        return (
+          <DropdownFilter
+            label={column.label}
+            options={uniqueCountries}
+            activeValue={currentCountryFilter}
+            onSelect={setCurrentCountryFilter}
+            searchable={true}
+          />
+        );
+      }
+    },
     {
       key: 'status',
       label: 'Status',
       className: 'text-left pl-4',
+      headerRender: (column) => {
+        const uniqueStatuses = Array.from(new Set(mockInfluencers.map(i => i.status))).sort();
+        return (
+          <DropdownFilter
+            label={column.label}
+            options={uniqueStatuses}
+            activeValue={currentStatusFilter}
+            onSelect={setCurrentStatusFilter}
+            width="w-[140px]"
+          />
+        );
+      },
       render: (value: string) => (
         <span className={`py-1 text-xs rounded-full text-white`}>
           {value}
@@ -92,10 +172,14 @@ export const TopInfluencers: FC = () => {
   ];
 
   return (
-    <div className="h-screen overflow-auto flex flex-col bg-[#4D54640D]">
+    <PageWrapper>
       <div className="flex flex-1">
         <main className="flex-1 bg-[#4D54640D]">
-          <TopBar heading="Top Influencer" />
+          <TopBar 
+            heading="Top Influencer" 
+            onSearch={setSearchTerm}
+            searchValue={searchTerm}
+          />
           
           {/* Content Area */}
           <div className="p-6">
@@ -105,7 +189,8 @@ export const TopInfluencers: FC = () => {
               columns={columns} 
               data={paginatedData} 
               showCheckbox={true}
-              onCheckboxChange={handleCheckboxChange}
+              rowKey="aiUserId"
+              onSelectionChange={handleSelectionChange}
             />
 
             {/* Pagination */}
@@ -121,6 +206,6 @@ export const TopInfluencers: FC = () => {
           </div>
         </main>
       </div>
-    </div>
+    </PageWrapper>
   );
 };

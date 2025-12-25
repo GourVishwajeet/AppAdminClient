@@ -1,29 +1,49 @@
 import type { FC } from 'react';
 import { useState, useRef, useEffect } from 'react';
+import { 
+  format, 
+  addMonths, 
+  subMonths, 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval, 
+  isSameMonth, 
+  isSameDay, 
+  isWithinInterval, 
+  startOfWeek, 
+  endOfWeek, 
+  subDays,
+  startOfYear,
+  endOfYear,
+  subYears,
+  startOfToday
+} from 'date-fns';
 import arrowDownIcon from '../assets/arrow-down.svg';
 
 interface DateRangePickerProps {
   label: string;
+  onApply?: (range: { start: Date | null; end: Date | null }) => void;
 }
 
-export const DateRangePicker: FC<DateRangePickerProps> = ({ label }) => {
+type DateRange = {
+  start: Date | null;
+  end: Date | null;
+};
+
+export const DateRangePicker: FC<DateRangePickerProps> = ({ label, onApply }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Mock state for calendar
-  // In a real app, use date-fns or similar
-  const [currentMonth] = useState(new Date(2022, 0, 1)); // Jan 2022
-  const [nextMonth] = useState(new Date(2022, 1, 1)); // Feb 2022
+  // State
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  const [selectedRange] = useState<{ start: Date | null; end: Date | null }>({
-    start: new Date(2022, 0, 6),
-    end: new Date(2022, 0, 13)
+  // Default to empty/null for "All" or "Unfiltered" state
+  const [selectedRange, setSelectedRange] = useState<DateRange>({
+    start: null,
+    end: null
   });
 
-  const presets = [
-    'Today', 'Yesterday', 'This week', 'Last week', 'This month', 'Last month', 'This year', 'Last year', 'All time'
-  ];
-  const [activePreset, setActivePreset] = useState('Last week');
+  const today = startOfToday();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -36,80 +56,94 @@ export const DateRangePicker: FC<DateRangePickerProps> = ({ label }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const startDayOfMonth = (date: Date) => {
-    const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    return day === 0 ? 6 : day - 1; // Mon=0, Sun=6
+  const handleDateClick = (date: Date) => {
+    if (!selectedRange.start || (selectedRange.start && selectedRange.end)) {
+      // Start new range
+      setSelectedRange({ start: date, end: null });
+    } else {
+      // Complete range
+      if (date < selectedRange.start) {
+        setSelectedRange({ start: date, end: selectedRange.start });
+      } else {
+        setSelectedRange({ ...selectedRange, end: date });
+      }
+    }
   };
 
-  const renderCalendar = (date: Date) => {
-    const totalDays = daysInMonth(date);
-    const startDay = startDayOfMonth(date);
-    const days = [];
-    
-    // Empty cells for previous month
-    for (let i = 0; i < startDay; i++) {
-      days.push(<div key={`empty-${i}`} className="w-8 h-8"></div>);
-    }
+  const renderCalendar = (monthDate: Date) => {
+    const monthStart = startOfMonth(monthDate);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 }); // Monday start
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
-    // Days
-    for (let i = 1; i <= totalDays; i++) {
-      const currentDate = new Date(date.getFullYear(), date.getMonth(), i);
+    const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
+
+    return calendarDays.map((date, i) => {
+      const isCurrentMonth = isSameMonth(date, monthDate);
+      
+      if (!isCurrentMonth) {
+        return <div key={i} className="w-8 h-8"></div>;
+      }
+
       const isSelected = selectedRange.start && selectedRange.end && 
-        currentDate >= selectedRange.start && currentDate <= selectedRange.end;
-      const isStart = selectedRange.start && currentDate.getTime() === selectedRange.start.getTime();
-      const isEnd = selectedRange.end && currentDate.getTime() === selectedRange.end.getTime();
-      const isFirstCol = (startDay + i - 1) % 7 === 0;
-      const isLastCol = (startDay + i - 1) % 7 === 6;
+        isWithinInterval(date, { start: selectedRange.start, end: selectedRange.end });
+      
+      const isStart = selectedRange.start && isSameDay(date, selectedRange.start);
+      const isEnd = selectedRange.end && isSameDay(date, selectedRange.end);
+      
+      // Visual boundary logic
+      const colIndex = i % 7;
+      const isFirstCol = colIndex === 0;
+      const isLastCol = colIndex === 6;
 
-      // Mock data for dots and highlights based on image
-      const hasPinkDot = (date.getMonth() === 0 && [6, 13, 22, 24, 26].includes(i)) || 
-                         (date.getMonth() === 1 && [4, 10, 22].includes(i));
+      const isVisualStart = isSelected && (isStart || isFirstCol);
+      const isVisualEnd = isSelected && (isEnd || isLastCol);
 
-      const isVisualStart = isSelected && (isStart || isFirstCol || i === 1);
-      const isVisualEnd = isSelected && (isEnd || isLastCol || i === totalDays);
-
-      days.push(
+      return (
         <div 
           key={i} 
-          className="w-full h-8 flex items-center justify-center text-xs cursor-pointer relative"
+          className="w-full h-10 flex items-center justify-center text-xs cursor-pointer relative"
+          onClick={() => handleDateClick(date)}
         >
-          {/* Grey Background Pill */}
+          {/* Grey Background Pill for Range */}
           {isSelected && (
-            <div className={`absolute top-0 bottom-0 bg-[#333333] 
-              ${isVisualStart ? 'left-0 rounded-l-[20px]' : 'left-[-1px]'} 
-              ${isVisualEnd ? 'right-0 rounded-r-[20px]' : 'right-[-1px]'}
+            <div className={`absolute h-8 top-1/2 -translate-y-1/2 bg-[#333333] 
+              ${isStart ? 'left-1/2 -ml-4 rounded-l-[20px]' : (isVisualStart ? 'left-0 rounded-l-[20px]' : 'left-[-32px] rounded-l-[20px]')} 
+              ${isEnd ? 'right-1/2 -mr-4 rounded-r-[20px]' : (isVisualEnd ? 'right-0 rounded-r-[20px]' : '-right-px')}
             `}></div>
           )}
 
           {/* Pink Selection Circle */}
           {(isStart) && (
-            <div className="absolute w-8 h-8 bg-[linear-gradient(117.65deg,#8000FF_13.26%,#FF0091_67.19%)] rounded-full z-10 mr-4"></div>
+            <div className="absolute w-8 h-8 bg-[linear-gradient(117.65deg,#8000FF_13.26%,#FF0091_67.19%)] rounded-full z-10"></div>
           )}
 
           {(isEnd) && (
-            <div className="absolute w-8 h-8 bg-[linear-gradient(117.65deg,#8000FF_13.26%,#FF0091_67.19%)] rounded-full z-10 ml-3"></div>
+            <div className="absolute w-8 h-8 bg-[linear-gradient(117.65deg,#8000FF_13.26%,#FF0091_67.19%)] rounded-full z-10"></div>
           )}
 
           {/* Hover Effect */}
-          {!isSelected && (
+          {!isSelected && !isStart && !isEnd && (
             <div className="absolute w-8 h-8 rounded-full hover:bg-white/10 transition-colors"></div>
           )}
 
           {/* Content */}
-          <div className={`relative z-20 flex flex-col items-center text-white ${isStart ? 'mr-4' : ''} ${isEnd ? 'ml-3' : ''}`}>
-            <span className={`relative ${(hasPinkDot && !isStart && !isEnd) ? 'top-[1px] mt-1' : ''} ${(isStart || isEnd) ? '-top-[1px]' : ''}`}>{i}</span>
-            {hasPinkDot && !isStart && !isEnd && (
-              <div className="w-1 h-1 rounded-full mt-0.5 bg-[linear-gradient(117.65deg,#8000FF_13.26%,#FF0091_67.19%)]"></div>
-            )}  
+          <div className={`relative z-20 flex flex-col items-center text-white ${isStart ? '' : ''} ${isEnd ? '' : ''}`}>
+            <span className={`relative ${(isStart || isEnd) ? '-top-px' : ''}`}>
+              {format(date, 'd')}
+            </span>
           </div>
         </div>
       );
-    }
-    return days;
+    });
   };
 
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  const formatDateDisplay = (date: Date | null) => {
+    if (!date) return '';
+    return format(date, 'MMM d, yyyy');
+  };
 
   return (
     <div className="relative" ref={dropdownRef} >
@@ -118,7 +152,11 @@ export const DateRangePicker: FC<DateRangePickerProps> = ({ label }) => {
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span>{label}</span>
+        <span className={selectedRange.start && selectedRange.end ? "text-[#0085FF] text-xs whitespace-nowrap" : ""}>
+          {selectedRange.start && selectedRange.end 
+            ? `${format(selectedRange.start, 'MMM d')} - ${format(selectedRange.end, 'MMM d')}` 
+            : label}
+        </span>
         <img
           src={arrowDownIcon}
           alt="Sort"
@@ -128,92 +166,57 @@ export const DateRangePicker: FC<DateRangePickerProps> = ({ label }) => {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="fixed mt-2 bg-black border border-[#333] rounded-xl shadow-2xl z-50 flex overflow-hidden" style={{ width: '851px', transform: 'translateX(-30%)' }}>
-          {/* Sidebar */}
-          <div className="w-[192px] h-[464px] border-r border-[#333] p-2 bg-black gap-1 flex flex-col">
-            {presets.map(preset => (
-              <div 
-                key={preset}
-                className={`px-4 py-2 text-xs cursor-pointer rounded-[6px] mb-1 ${
-                  activePreset === preset 
-                    ? 'text-[14px] font-medium bg-[#1B1B1B] rounded-[6px]' 
-                    : 'text-[#FFFFFF] text-[14px] font-medium hover:text-white hover:bg-white/5'
-                }`}
-                onClick={() => setActivePreset(preset)}
-              >
-                <span className={activePreset === preset ? "bg-[linear-gradient(117.65deg,#8000FF_13.26%,#FF0091_67.19%)] bg-clip-text text-transparent" : ""}>
-                  {preset}
-                </span>
-              </div>
-            ))}
-          </div>
-
+        <div className="fixed mt-2 bg-black border border-[#333] rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden" style={{ width: '320px' }}>
+          
           {/* Main Content */}
-          <div className="flex-1 flex flex-col bg-black">
-            <div className="flex flex-1">
-              {/* Calendar 1 */}
-              <div className="flex-1 p-4">
-                <div className="flex items-center justify-between mb-4 px-2">
-                  <button className="text-gray-400 hover:text-white">&lt;</button>
-                  <span className="text-white text-sm font-medium">{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</span>
-                  <button className="text-gray-400 hover:text-white">&gt;</button>
-                </div>
-                <div className="grid grid-cols-7 mb-2">
-                  {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sat', 'Su'].map(d => (
-                    <div key={d} className="text-center text-xs text-gray-500">{d}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-y-2">
-                  {renderCalendar(currentMonth)}
-                </div>
+          <div className="flex flex-col bg-black">
+            
+            {/* Calendar */}
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-6 px-2">
+                <button 
+                  className="text-gray-400 hover:text-white"
+                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                >
+                  &lt;
+                </button>
+                <span className="text-white text-sm font-medium">
+                  {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                </span>
+                <button 
+                  className="text-gray-400 hover:text-white"
+                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                >
+                  &gt;
+                </button>
               </div>
-
-              {/* Vertical Divider */}
-              <div className="w-[1px] bg-[#333]"></div>
-
-              {/* Calendar 2 */}
-              <div className="flex-1 p-4">
-                <div className="flex items-center justify-between mb-4 px-2">
-                  <button className="text-gray-400 hover:text-white">&lt;</button>
-                  <span className="text-white text-sm font-medium">{monthNames[nextMonth.getMonth()]} {nextMonth.getFullYear()}</span>
-                  <button className="text-gray-400 hover:text-white">&gt;</button>
-                </div>
-                <div className="grid grid-cols-7 mb-2">
-                  {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sat', 'Su'].map(d => (
-                    <div key={d} className="text-center text-xs text-gray-500">{d}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-y-2">
-                  {renderCalendar(nextMonth)}
-                </div>
+              <div className="grid grid-cols-7 mb-5">
+                {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sat', 'Su'].map(d => (
+                  <div key={d} className="text-center text-xs text-gray-500">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-y-4">
+                {renderCalendar(currentMonth)}
               </div>
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between p-4 border-t border-[#333] gap-4">
-              <div className="flex items-center gap-8">
-                <div className="w-[136px] h-[40px] border border-[#333] rounded-[8px] px-3 py-1.5 text-xs text-white flex justify-center items-center">
-                  Jan 6, 2022
-                </div>
-                <span className="text-gray-500">-</span>
-                <div className="w-[136px] h-[40px] border border-[#333] rounded-[8px] px-3 py-1.5 text-xs text-white flex justify-center items-center">
-                  Jan 13, 2022
-                </div>
-              </div>
-              <div className="flex items-center gap-8"> 
-                <button 
-                  className="px-4 py-1.5 text-xs text-white border border-[#333] rounded-[12px] w-[144px] h-[40px]"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="px-6 py-1.5 text-xs text-white bg-[linear-gradient(117.65deg,#8000FF_13.26%,#FF0091_67.19%)] border border-transparent hover:opacity-90 rounded-[12px] transition-all w-[144px] h-[40px]"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Apply
-                </button>
-              </div>
+            <div className="flex items-center justify-between p-4 border-t border-[#333] gap-2">
+              <button 
+                className="px-4 py-1.5 text-xs text-white border border-[#333] rounded-[12px] flex-1 h-[40px]"
+                onClick={() => setIsOpen(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="px-4 py-1.5 text-xs text-white bg-[linear-gradient(117.65deg,#8000FF_13.26%,#FF0091_67.19%)] border border-transparent hover:opacity-90 rounded-[12px] transition-all flex-1 h-[40px]"
+                onClick={() => {
+                  onApply?.(selectedRange);
+                  setIsOpen(false);
+                }}
+              >
+                Apply
+              </button>
             </div>
           </div>
         </div>

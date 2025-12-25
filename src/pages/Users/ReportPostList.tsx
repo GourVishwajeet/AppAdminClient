@@ -8,6 +8,8 @@ import { mockReportedPosts, type ReportedPostData } from '../../constants/mockDa
 import { Table, type TableColumn } from '../../components/Table';
 import { TopBar } from '../../components/TopBar';
 import { Pagination } from '../../components/Pagination';
+import { DateRangePicker } from '../../components/DateRangePicker';
+import { PageWrapper } from '../../components/PageWrapper';
 
 export const ReportPostList: FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,8 +17,16 @@ export const ReportPostList: FC = () => {
   const [selectedItems, setSelectedItems] = useState<ReportedPostData[]>([]);
   const itemsPerPage = 10;
 
-  // For now, using all data without filtering since search input was removed
-  const filteredData = mockReportedPosts;
+  // Filter data based on search
+  const filteredData = mockReportedPosts.filter(item => {
+    return (
+      item.userName.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.userName.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.postId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.userTraffic.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.reports.toString().includes(searchTerm)
+    );
+  });
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
@@ -50,11 +60,16 @@ export const ReportPostList: FC = () => {
       )
     },
     { key: 'postId', label: 'Post ID', width: 'w-[130px] pl-6' },
-    { key: 'uploadTime', label: 'Upload Time', className: 'pl-4' },
+    { 
+      key: 'uploadTime', 
+      label: 'Upload Time', 
+      className: 'pl-4',
+      headerRender: (column) => <DateRangePicker label={column.label} />
+    },
     { key: 'trafficRatio', label: 'Traffic Ratio', className: 'pl-4' },
     { key: 'likeRatio', label: 'Like Ratio', className: 'pl-4' },
     { key: 'userTraffic', label: 'User Traffic', className: 'pl-4' },
-    { key: 'report', label: 'Report', className: 'pl-4' },
+    { key: 'reports', label: 'Report', className: 'pl-4' },
     { key: 'totalLikes', label: 'Total Likes', className: 'pl-4' },
     {
       key: 'actions',
@@ -80,10 +95,14 @@ export const ReportPostList: FC = () => {
   ];
 
   return (
-    <div className="h-screen overflow-auto flex flex-col bg-[#4D54640D]">
+    <PageWrapper>
       <div className="flex flex-1">
         <main className="flex-1 bg-[#4D54640D]">
-          <TopBar heading="Report Post List" />
+          <TopBar 
+            heading="Report Post List" 
+            onSearch={setSearchTerm}
+            searchValue={searchTerm}
+          />
           
           {/* Content Area */}
           <div className="p-6">
@@ -109,6 +128,6 @@ export const ReportPostList: FC = () => {
           </div>
         </main>
       </div>
-    </div>
+    </PageWrapper>
   );
 };

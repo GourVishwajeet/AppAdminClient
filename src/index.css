@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+/* Fix white flash by setting body background */
+body {
+  background-color: #000;
+  color: #fff;
+  overflow: hidden; /* Prevent scrollbars during transition */
+}
+
+@layer utilities {
+  .page-animate {
+    animation: pageFade 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes pageFade {
+    from {
+      opacity: 0;
+      transform: scale(0.98) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+}

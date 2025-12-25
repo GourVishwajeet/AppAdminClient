@@ -11,6 +11,9 @@ import editIcon from '../assets/edit.svg';
 import viewIcon from '../assets/view.svg';
 import blockIcon from '../assets/block.svg';
 import trashIcon from '../assets/trash.svg';
+import { PageWrapper } from '../components/PageWrapper';
+import { DropdownFilter } from '../components/DropdownFilter';
+import { parse, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
 const FollowersCell: FC<{ value: string }> = ({ value }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -42,13 +45,48 @@ const FollowersCell: FC<{ value: string }> = ({ value }) => {
 export const StoryManagement: FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedItems, setSelectedItems] = useState<StoryManagementData[]>([]);
   const [isViewPanelOpen, setIsViewPanelOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryManagementData | null>(null);
+  
+  const [currentCollaborationFilter, setCurrentCollaborationFilter] = useState('All');
+  const [uploadTimeRange, setUploadTimeRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+
   const itemsPerPage = 10;
 
-  // For now, using all data without filtering since search input was removed
-  const filteredData = mockStoryManagement;
+  // Helper to parse 'dd-MM-yyyy' date strings
+  const parseCustomDate = (dateStr: string): Date => {
+    return parse(dateStr, 'dd-MM-yyyy', new Date());
+  };
+
+  // Filter logic
+  const filteredData = mockStoryManagement.filter(item => {
+    // Search filter
+    const matchesSearch = 
+      item.userName.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.userName.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.storyId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.collaboration.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Dropdown filters
+    const matchesCollaboration = currentCollaborationFilter === 'All' || item.collaboration === currentCollaborationFilter;
+
+    // Date Range Filter
+    let matchesUploadTime = true;
+    if (uploadTimeRange.start && uploadTimeRange.end) {
+      try {
+        const postDate = parseCustomDate(item.uploadTime);
+        matchesUploadTime = isWithinInterval(postDate, { 
+          start: startOfDay(uploadTimeRange.start), 
+          end: endOfDay(uploadTimeRange.end) 
+        });
+      } catch (error) {
+        console.error("Date parsing error", error);
+        matchesUploadTime = false;
+      }
+    }
+
+    return matchesSearch && matchesCollaboration && matchesUploadTime;
+  });
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
@@ -56,10 +94,12 @@ export const StoryManagement: FC = () => {
     currentPage * itemsPerPage
   );
 
-  const handleCheckboxChange = (checkedItems: StoryManagementData[]) => {
-    setSelectedItems(checkedItems);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(new Set());
+
+  const handleSelectionChange = (keys: Set<string | number>) => {
+    setSelectedKeys(keys);
     // Log selected items for debugging/demonstration purposes
-    console.log('Selected influencers:', checkedItems);
+    console.log('Selected story IDs:', Array.from(keys));
   };
 
   const handleViewClick = (story: StoryManagementData) => {
@@ -87,12 +127,33 @@ export const StoryManagement: FC = () => {
       )
     },
     { key: 'storyId', label: 'Story ID', width: 'w-[130px] pl-6' },
-    { key: 'collaboration', label: 'Collaboration', className: 'pl-4' },
+    { 
+      key: 'collaboration', 
+      label: 'Collaboration', 
+      className: 'pl-4',
+      headerRender: (column) => {
+        const uniqueCollaborations = Array.from(new Set(mockStoryManagement.map(i => i.collaboration))).sort();
+        return (
+          <DropdownFilter
+            label={column.label}
+            options={uniqueCollaborations}
+            activeValue={currentCollaborationFilter}
+            onSelect={setCurrentCollaborationFilter}
+            searchable={true}
+          />
+        );
+      }
+    },
     { 
       key: 'uploadTime', 
       label: 'Upload Time', 
       className: 'pl-4',
-      headerRender: (column) => <DateRangePicker label={column.label} />
+      headerRender: (column) => (
+        <DateRangePicker 
+          label={column.label} 
+          onApply={setUploadTimeRange}
+        />
+      )
     },
     { key: 'nonFollowers', label: 'Non Followers', className: 'pl-4' },
     {
@@ -145,10 +206,14 @@ export const StoryManagement: FC = () => {
   ];
 
   return (
-    <div className="h-screen overflow-auto flex flex-col bg-[#4D54640D]">
+    <PageWrapper>
       <div className="flex flex-1">
         <main className="flex-1 bg-[#4D54640D]">
-          <TopBar heading="Story Management" />
+          <TopBar 
+            heading="Story Management" 
+            onSearch={setSearchTerm}
+            searchValue={searchTerm}
+          />
           
           {/* Content Area */}
           <div className="p-6">
@@ -158,7 +223,9 @@ export const StoryManagement: FC = () => {
               columns={columns} 
               data={paginatedData} 
               showCheckbox={true}
-              onCheckboxChange={handleCheckboxChange}
+              rowKey="storyId"
+              selectedKeys={selectedKeys}
+              onSelectionChange={handleSelectionChange}
             />
 
             {/* Pagination */}
@@ -180,6 +247,6 @@ export const StoryManagement: FC = () => {
           />
         </main>
       </div>
-    </div>
+    </PageWrapper>
   );
 };
