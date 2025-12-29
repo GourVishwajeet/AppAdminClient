@@ -7,6 +7,7 @@ import { TrafficAnalysisModal } from '../components/TrafficAnalysisModal';
 import { StoryViewPanel } from '../components/StoryViewPanel';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { mockStoryManagement, type StoryManagementData } from '../constants/mockData';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import editIcon from '../assets/edit.svg';
 import viewIcon from '../assets/view.svg';
 import blockIcon from '../assets/block.svg';
@@ -47,6 +48,26 @@ export const StoryManagement: FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isViewPanelOpen, setIsViewPanelOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<StoryManagementData | null>(null);
+
+  // Modal State
+  const [actionModal, setActionModal] = useState<{
+    type: 'block' | 'delete' | null;
+    data: StoryManagementData | null;
+  }>({ type: null, data: null });
+
+  const handleActionConfirm = () => {
+    if (!actionModal.data || !actionModal.type) return;
+
+    if (actionModal.type === 'block') {
+      console.log('Blocking story:', actionModal.data.storyId);
+      // Add logic to block here
+    } else if (actionModal.type === 'delete') {
+      console.log('Deleting story:', actionModal.data.storyId);
+      // Add logic to delete here
+    }
+
+    setActionModal({ type: null, data: null });
+  };
   
   const [currentCollaborationFilter, setCurrentCollaborationFilter] = useState('All');
   const [uploadTimeRange, setUploadTimeRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
@@ -194,10 +215,16 @@ export const StoryManagement: FC = () => {
           <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
             <img src={editIcon} alt="Edit" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'block', data: row })}
+          >
             <img src={blockIcon} alt="Block" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'delete', data: row })}
+          >
             <img src={trashIcon} alt="Delete" className="w-4 h-4"/>
           </button>
         </div>
@@ -238,6 +265,26 @@ export const StoryManagement: FC = () => {
                 onPageChange={setCurrentPage}
               />
             </div>
+
+            <ConfirmationModal
+              isOpen={actionModal.type === 'block'}
+              onClose={() => setActionModal({ type: null, data: null })}
+              onConfirm={handleActionConfirm}
+              title="Block Story"
+              message={`Are you sure you want to block story ${actionModal.data?.storyId}? This action can be undone later.`}
+              confirmLabel="Block"
+              confirmVariant="danger"
+            />
+
+            <ConfirmationModal
+              isOpen={actionModal.type === 'delete'}
+              onClose={() => setActionModal({ type: null, data: null })}
+              onConfirm={handleActionConfirm}
+              title="Delete Story"
+              message={`Are you sure you want to delete story ${actionModal.data?.storyId}? This action cannot be undone.`}
+              confirmLabel="Delete"
+              confirmVariant="danger"
+            />
           </div>
 
           <StoryViewPanel

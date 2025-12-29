@@ -9,6 +9,7 @@ import viewIcon from '../assets/view.svg';
 import blockIcon from '../assets/block.svg';
 import trashIcon from '../assets/trash.svg';
 import { PageWrapper } from '../components/PageWrapper';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import { DropdownFilter } from '../components/DropdownFilter';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { subHours, subDays, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
@@ -16,6 +17,26 @@ import { subHours, subDays, isWithinInterval, startOfDay, endOfDay } from 'date-
 export const TrendingPosts: FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Modal State
+  const [actionModal, setActionModal] = useState<{
+    type: 'block' | 'delete' | null;
+    data: TrendingPostData | null;
+  }>({ type: null, data: null });
+
+  const handleActionConfirm = () => {
+    if (!actionModal.data || !actionModal.type) return;
+
+    if (actionModal.type === 'block') {
+      console.log('Blocking trending post:', actionModal.data.postId);
+      // Add logic to block here
+    } else if (actionModal.type === 'delete') {
+      console.log('Deleting trending post:', actionModal.data.postId);
+      // Add logic to delete here
+    }
+
+    setActionModal({ type: null, data: null });
+  };
 
   const [currentCollaborationFilter, setCurrentCollaborationFilter] = useState('All');
   const [uploadTimeRange, setUploadTimeRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
@@ -136,7 +157,7 @@ export const TrendingPosts: FC = () => {
       key: 'actions',
       label: 'Action',
       className: 'text-left pl-4',
-      render: () => (
+      render: (data: TrendingPostData) => (
         <div className="flex items-center gap-[3px] min-h-[20px]">
           <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
             <img src={viewIcon} alt="View" className="w-4 h-4" />
@@ -145,10 +166,16 @@ export const TrendingPosts: FC = () => {
           <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
             <img src={editIcon} alt="Edit" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'block', data: data })}
+          >
             <img src={blockIcon} alt="Block" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'delete', data: data })}
+          >
             <img src={trashIcon} alt="Delete" className="w-4 h-4"/>
           </button>
         </div>
@@ -189,6 +216,26 @@ export const TrendingPosts: FC = () => {
                 onPageChange={setCurrentPage}
               />
             </div>
+
+            <ConfirmationModal
+              isOpen={actionModal.type === 'block'}
+              onClose={() => setActionModal({ type: null, data: null })}
+              onConfirm={handleActionConfirm}
+              title="Block Post"
+              message={`Are you sure you want to block post ${actionModal.data?.postId}? This action can be undone later.`}
+              confirmLabel="Block"
+              confirmVariant="danger"
+            />
+
+            <ConfirmationModal
+              isOpen={actionModal.type === 'delete'}
+              onClose={() => setActionModal({ type: null, data: null })}
+              onConfirm={handleActionConfirm}
+              title="Delete Post"
+              message={`Are you sure you want to delete post ${actionModal.data?.postId}? This action cannot be undone.`}
+              confirmLabel="Delete"
+              confirmVariant="danger"
+            />
           </div>
         </main>
       </div>

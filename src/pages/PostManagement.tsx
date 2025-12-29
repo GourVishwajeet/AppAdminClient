@@ -11,6 +11,7 @@ import trashIcon from '../assets/trash.svg';
 import { CommentsSideModal } from '../components/CommentsSideModal';
 import { PostAnalysisPopup } from '../components/PostAnalysisPopup';
 import { PageWrapper } from '../components/PageWrapper';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import { DropdownFilter } from '../components/DropdownFilter';
 
 const CellWithAnalysis: FC<{ value: string | number }> = ({ value }) => {
@@ -39,6 +40,26 @@ export const PostManagement: FC = () => {
   const [currentCollaborationFilter, setCurrentCollaborationFilter] = useState('All');
   const [currentUploadTimeFilter, setCurrentUploadTimeFilter] = useState('All');
   const itemsPerPage = 10;
+
+  // Modal State
+  const [actionModal, setActionModal] = useState<{
+    type: 'block' | 'delete' | null;
+    data: PostManagementData | null;
+  }>({ type: null, data: null });
+
+  const handleActionConfirm = () => {
+    if (!actionModal.data || !actionModal.type) return;
+
+    if (actionModal.type === 'block') {
+      console.log('Blocking post/user:', actionModal.data.postId);
+      // Add logic to block here
+    } else if (actionModal.type === 'delete') {
+      console.log('Deleting post:', actionModal.data.postId);
+      // Add logic to delete here
+    }
+
+    setActionModal({ type: null, data: null });
+  };
 
   // Filter logic
   const filteredData = mockPostManagement.filter(item => {
@@ -134,7 +155,7 @@ export const PostManagement: FC = () => {
       key: 'actions',
       label: 'Action',
       className: 'text-left pl-4',
-      render: () => (
+      render: (data: PostManagementData) => (
         <div className="flex items-center gap-[3px] min-h-[20px]">
           <button 
             className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
@@ -145,10 +166,16 @@ export const PostManagement: FC = () => {
           <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
             <img src={editIcon} alt="Edit" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'block', data })}
+          >
             <img src={blockIcon} alt="Block" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'delete', data })}
+          >
             <img src={trashIcon} alt="Delete" className="w-4 h-4"/>
           </button>
         </div>
@@ -193,6 +220,26 @@ export const PostManagement: FC = () => {
             <CommentsSideModal 
               isOpen={isCommentsModalOpen} 
               onClose={() => setIsCommentsModalOpen(false)} 
+            />
+
+            <ConfirmationModal
+              isOpen={actionModal.type === 'block'}
+              onClose={() => setActionModal({ type: null, data: null })}
+              onConfirm={handleActionConfirm}
+              title="Block User/Post"
+              message={`Are you sure you want to block this post/user? This action can be undone later.`}
+              confirmLabel="Block"
+              confirmVariant="danger"
+            />
+
+            <ConfirmationModal
+              isOpen={actionModal.type === 'delete'}
+              onClose={() => setActionModal({ type: null, data: null })}
+              onConfirm={handleActionConfirm}
+              title="Delete Post"
+              message={`Are you sure you want to delete post ${actionModal.data?.postId}? This action cannot be undone.`}
+              confirmLabel="Delete"
+              confirmVariant="danger"
             />
           </div>
         </main>

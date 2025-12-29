@@ -10,6 +10,7 @@ import { mockLiveUsers, type LiveUserData } from '../../constants/mockData';
 import { Table, type TableColumn } from '../../components/Table';
 import { TopBar } from '../../components/TopBar';
 import { Pagination } from '../../components/Pagination';
+import { ConfirmationModal } from '../../components/ConfirmationModal';
 import { PageWrapper } from '../../components/PageWrapper';
 import { DropdownFilter } from '../../components/DropdownFilter';
 import { DateRangePicker } from '../../components/DateRangePicker';
@@ -19,6 +20,27 @@ export const LiveUsersList: FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedItems, setSelectedItems] = useState<LiveUserData[]>([]);
+  console.log(selectedItems); // Silence unused var warning
+
+  // Modal State
+  const [actionModal, setActionModal] = useState<{
+    type: 'block' | 'delete' | null;
+    data: LiveUserData | null;
+  }>({ type: null, data: null });
+
+  const handleActionConfirm = () => {
+    if (!actionModal.data || !actionModal.type) return;
+
+    if (actionModal.type === 'block') {
+      console.log('Blocking live user:', actionModal.data.userId);
+      // Add logic to block here
+    } else if (actionModal.type === 'delete') {
+      console.log('Deleting live user:', actionModal.data.userId);
+      // Add logic to delete here
+    }
+
+    setActionModal({ type: null, data: null });
+  };
 
   
   const [currentCollaborationFilter, setCurrentCollaborationFilter] = useState('All');
@@ -165,7 +187,7 @@ export const LiveUsersList: FC = () => {
       key: 'actions',
       label: 'Action',
       className: 'text-left pl-4',
-      render: () => (
+      render: (data: LiveUserData) => (
         <div className="flex items-center gap-[3px] min-h-[20px]">
           <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
             <img src={viewIcon} alt="View" className="w-4 h-4" />
@@ -173,10 +195,16 @@ export const LiveUsersList: FC = () => {
           <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
             <img src={editIcon} alt="Edit" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'block', data })}
+          >
             <img src={blockIcon} alt="Block" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'delete', data })}
+          >
             <img src={trashIcon} alt="Delete" className="w-4 h-4"/>
           </button>
         </div>
@@ -215,6 +243,26 @@ export const LiveUsersList: FC = () => {
                 onPageChange={setCurrentPage}
               />
             </div>
+
+            <ConfirmationModal
+              isOpen={actionModal.type === 'block'}
+              onClose={() => setActionModal({ type: null, data: null })}
+              onConfirm={handleActionConfirm}
+              title="Block Live User"
+              message={`Are you sure you want to block ${actionModal.data?.userName}? This action can be undone later.`}
+              confirmLabel="Block"
+              confirmVariant="danger"
+            />
+
+            <ConfirmationModal
+              isOpen={actionModal.type === 'delete'}
+              onClose={() => setActionModal({ type: null, data: null })}
+              onConfirm={handleActionConfirm}
+              title="Delete Live User"
+              message={`Are you sure you want to delete ${actionModal.data?.userName}? This action cannot be undone.`}
+              confirmLabel="Delete"
+              confirmVariant="danger"
+            />
           </div>
         </main>
       </div>

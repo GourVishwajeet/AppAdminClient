@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { TopBar } from '../components/TopBar';
 import { Table, type TableColumn } from '../components/Table';
 import { Pagination } from '../components/Pagination';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import { BoostPostInvoiceModal } from '../components/BoostPostInvoiceModal';
 import { mockBoostedPosts, type BoostedPostData } from '../constants/mockData';
 import editIcon from '../assets/edit.svg';
@@ -19,6 +20,26 @@ export const BoostedPost: FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedPostForModal, setSelectedPostForModal] = useState<BoostedPostData | null>(null);
+
+  // Modal State
+  const [actionModal, setActionModal] = useState<{
+    type: 'block' | 'delete' | null;
+    data: BoostedPostData | null;
+  }>({ type: null, data: null });
+
+  const handleActionConfirm = () => {
+    if (!actionModal.data || !actionModal.type) return;
+
+    if (actionModal.type === 'block') {
+      console.log('Blocking boosted post:', actionModal.data.postId);
+      // Add logic to block here
+    } else if (actionModal.type === 'delete') {
+      console.log('Deleting boosted post:', actionModal.data.postId);
+      // Add logic to delete here
+    }
+
+    setActionModal({ type: null, data: null });
+  };
   
   const [currentCollaborationFilter, setCurrentCollaborationFilter] = useState('All');
   const [uploadTimeRange, setUploadTimeRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
@@ -152,10 +173,16 @@ export const BoostedPost: FC = () => {
           <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
             <img src={editIcon} alt="Edit" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'block', data: rowData })}
+          >
             <img src={blockIcon} alt="Block" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'delete', data: rowData })}
+          >
             <img src={trashIcon} alt="Delete" className="w-4 h-4"/>
           </button>
         </div>
@@ -208,6 +235,26 @@ export const BoostedPost: FC = () => {
           postData={selectedPostForModal}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={actionModal.type === 'block'}
+        onClose={() => setActionModal({ type: null, data: null })}
+        onConfirm={handleActionConfirm}
+        title="Block Post"
+        message={`Are you sure you want to block post ${actionModal.data?.postId}? This action can be undone later.`}
+        confirmLabel="Block"
+        confirmVariant="danger"
+      />
+
+      <ConfirmationModal
+        isOpen={actionModal.type === 'delete'}
+        onClose={() => setActionModal({ type: null, data: null })}
+        onConfirm={handleActionConfirm}
+        title="Delete Post"
+        message={`Are you sure you want to delete post ${actionModal.data?.postId}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        confirmVariant="danger"
+      />
     </PageWrapper>
   );
 };

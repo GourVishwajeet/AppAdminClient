@@ -10,6 +10,7 @@ import blockIcon from '../assets/block.svg';
 import trashIcon from '../assets/trash.svg';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { GenderPicker } from '../components/GenderPicker';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import { DropdownFilter } from '../components/DropdownFilter';
 import { isWithinInterval, parse } from 'date-fns';
 import { PageWrapper } from '../components/PageWrapper';
@@ -22,12 +23,31 @@ export const TopInfluencers: FC = () => {
   const [dobRange, setDobRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   
   const [currentPage, setCurrentPage] = useState(1);
-  const selectedKeys = new Set<string | number>(); // Removing unused state for now to fix lint or just ignore
   const [, setSelectedKeys] = useState<Set<string | number>>(new Set());
+
+  // Modal State
+  const [actionModal, setActionModal] = useState<{
+    type: 'block' | 'delete' | null;
+    data: InfluencerData | null;
+  }>({ type: null, data: null });
   
   const handleSelectionChange = (keys: Set<string | number>) => {
     setSelectedKeys(keys);
     console.log('Selected influencer IDs:', Array.from(keys));
+  };
+  
+  const handleActionConfirm = () => {
+    if (!actionModal.data || !actionModal.type) return;
+
+    if (actionModal.type === 'block') {
+      console.log('Blocking user:', actionModal.data.userName.name);
+      // Add logic to block user here
+    } else if (actionModal.type === 'delete') {
+      console.log('Deleting user:', actionModal.data.userName.name);
+      // Add logic to delete user here
+    }
+
+    setActionModal({ type: null, data: null });
   };
   
   const itemsPerPage = 10;
@@ -151,19 +171,24 @@ export const TopInfluencers: FC = () => {
       key: 'actions',
       label: 'Action',
       className: 'text-left pl-4',
-      render: () => (
+      render: (data: InfluencerData) => (
         <div className="flex items-center gap-[3px] min-h-[20px]">
           <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
             <img src={viewIcon} alt="View" className="w-4 h-4" />
-            {/* Hello UYuvanth */}
           </button>
           <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
             <img src={editIcon} alt="Edit" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'block', data })}
+          >
             <img src={blockIcon} alt="Block" className="w-4 h-4"/>
           </button>
-          <button className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]">
+          <button 
+            className="p-1 hover:bg-gray-100 rounded inline-flex items-center justify-center min-w-[20px] min-h-[20px]"
+            onClick={() => setActionModal({ type: 'delete', data })}
+          >
             <img src={trashIcon} alt="Delete" className="w-4 h-4"/>
           </button>
         </div>
@@ -204,6 +229,26 @@ export const TopInfluencers: FC = () => {
               />
             </div>
           </div>
+
+          <ConfirmationModal
+            isOpen={actionModal.type === 'block'}
+            onClose={() => setActionModal({ type: null, data: null })}
+            onConfirm={handleActionConfirm}
+            title="Block User"
+            message={`Are you sure you want to block ${actionModal.data?.userName.name}? This action can be undone later.`}
+            confirmLabel="Block"
+            confirmVariant="danger"
+          />
+
+          <ConfirmationModal
+            isOpen={actionModal.type === 'delete'}
+            onClose={() => setActionModal({ type: null, data: null })}
+            onConfirm={handleActionConfirm}
+            title="Delete User"
+            message={`Are you sure you want to delete ${actionModal.data?.userName.name}? This action cannot be undone.`}
+            confirmLabel="Delete"
+            confirmVariant="danger"
+          />
         </main>
       </div>
     </PageWrapper>
