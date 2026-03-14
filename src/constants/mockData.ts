@@ -108,6 +108,20 @@ export interface StoryManagementData {
   totalLikes: string;
 }
 
+export interface PlatformUserData {
+  user: {
+    avatar: string;
+    name: string;
+    id: string;
+  };
+  role: 'Streamer' | 'Viewer' | 'Hybrid';
+  subscription: 'VIP' | 'PREM' | 'BASIC';
+  revenue: string; // USD as requested
+  watchTime: string;
+  rewards: string;
+  status: 'Active' | 'Offline' | 'Suspended' | 'Banned';
+}
+
 export interface AudienceManagementData {
   userName: {
     name: string;
@@ -476,3 +490,51 @@ export const mockActivityGridData: ActivityGridData[] = Array(12).fill(null).map
   avatars: [user, user, user, user],
   comments: '5 comments'
 }));
+
+export const platformUserMockData: PlatformUserData[] = [
+  {
+    user: { avatar: user, name: "Alexander Hipp", id: "0012450147" },
+    role: "Streamer",
+    subscription: "VIP",
+    revenue: "$12,450.00",
+    watchTime: "24h 15m",
+    rewards: "$1,200",
+    status: "Active",
+  },
+  {
+    user: { avatar: user, name: "Brooklyn Simmons", id: "0012450148" },
+    role: "Viewer",
+    subscription: "PREM",
+    revenue: "$8,240.00",
+    watchTime: "12h 30m",
+    rewards: "$450",
+    status: "Offline",
+  },
+  {
+    user: { avatar: user, name: "Cameron Williamson", id: "0012450149" },
+    role: "Hybrid",
+    subscription: "BASIC",
+    revenue: "$2,100.00",
+    watchTime: "45h 00m",
+    rewards: "$150",
+    status: "Suspended",
+  },
+  {
+    user: { avatar: user, name: "Darlene Robertson", id: "0012450150" },
+    role: "Streamer",
+    subscription: "VIP",
+    revenue: "$45,000.00",
+    watchTime: "120h 10m",
+    rewards: "$5,000",
+    status: "Active",
+  },
+  {
+    user: { avatar: user, name: "Esther Howard", id: "0012450151" },
+    role: "Viewer",
+    subscription: "BASIC",
+    revenue: "$0.00",
+    watchTime: "2h 45m",
+    rewards: "$0",
+    status: "Banned",
+  },
+];

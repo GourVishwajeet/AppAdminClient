@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { ThirdLevelPanel } from './ThirdLevelPanel';
 
@@ -36,6 +37,7 @@ const audienceSubItems = [
 ];
 
 const userManagementSubItems = [
+  { id: 'user-management', label: 'All Platform Users' },
   { id: 'top-influencer', label: 'Top Influencer' },
   { id: 'audience-management', label: 'Audience Management' },
   { id: 'audience-mgmt', label: 'User Profile' },
@@ -61,21 +63,24 @@ const liveManagementSubItems = [
 
 interface SidebarProps {
   currentPage:
-    | 'top-influencer'
-    | 'user-profile'
-    | 'trending-posts'
-    | 'reported-posts'
-    | 'boosted-posts'
-    | 'live-users'
-    | 'post-management'
-    | 'story-management'
-    | 'story-management'
-    | 'audience-management'
-    | 'activity';
+  | 'dashboard'
+  | 'top-influencer'
+  | 'user-profile'
+  | 'user-management'
+  | 'trending-posts'
+  | 'reported-posts'
+  | 'boosted-posts'
+  | 'live-users'
+  | 'post-management'
+  | 'story-management'
+  | 'audience-management'
+  | 'activity';
   setCurrentPage: (
     page:
+      | 'dashboard'
       | 'top-influencer'
       | 'user-profile'
+      | 'user-management'
       | 'trending-posts'
       | 'reported-posts'
       | 'boosted-posts'
@@ -110,10 +115,11 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
   };
 
   return (
-    <aside
-      className={
-        `relative mt-2 h-screen z-50 ${isCollapsed ? 'w-[96px]' : 'w-[250px]'} bg-[#000000] text-[#dcdcdc] flex flex-col py-4`
-      }
+    <motion.aside
+      initial={false}
+      animate={{ width: isCollapsed ? 96 : 212 }}
+      transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+      className="relative z-50 h-[1024px] border-r border-[#ffffff1a] pt-[20px] px-[16px] pb-[20px] gap-[16px] bg-[#000000] text-[#dcdcdc] flex flex-col"
       onMouseLeave={closeAllSubmenus}
     >
       <nav className="flex-1 flex flex-col gap-0.5 mt-3">
@@ -128,9 +134,11 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
           };
 
           return (
-            <button
+            <motion.button
               key={item.id}
               type="button"
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
               onMouseEnter={() => {
                 if (item.id === 'audience') {
                   openAudienceMenus();
@@ -149,17 +157,20 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
                   closeAllSubmenus();
                   if (item.id === 'activity') {
                     setCurrentPage('activity');
+                  } else if (item.id === 'dashboard') {
+                    setCurrentPage('dashboard');
                   }
                 }
               }}
               className={
-                'relative flex items-center gap-3 px-4 h-11 text-sm font-medium transition-colors cursor-pointer ' +
-                (isActive ? 'bg-[#1a1a1a]' : 'bg-transparent! hover:bg-transparent!')
+                'relative flex items-center gap-3 px-4 h-11 text-sm font-medium transition-colors cursor-pointer rounded-xl ' +
+                (isActive ? 'bg-[#1a1a1a]' : 'bg-transparent! hover:bg-[#ffffff05]!')
               }
             >
               {isActive && (
-                <span
-                  className="absolute left-0 top-0 h-full w-[4px] bg-[linear-gradient(117.65deg,#8000FF_35%,#FF0091_67.19%)]"
+                <motion.span
+                  layoutId="active-indicator"
+                  className="absolute left-0 top-2 h-7 w-[4px] bg-[linear-gradient(117.65deg,#8000FF_35%,#FF0091_67.19%)] rounded-full"
                 />
               )}
               <span
@@ -178,74 +189,88 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
                 />
               </span>
               {!isCollapsed && (
-                <span className="text-left">{item.label}</span>
+                <motion.span 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="text-left"
+                >
+                  {item.label}
+                </motion.span>
               )}
               {showArrow && (
-                <span className="flex items-center justify-center w-6 h-6">
+                <span className="flex items-center justify-center w-6 h-6 ml-auto">
                   <img
                     src={arrowRightIcon}
                     alt="Section navigation"
                     className={
-                      'w-[24px] h-[24px] object-contain ' + 
+                      'w-[20px] h-[20px] object-contain ' +
                       (isActive ? '' : 'grayscale opacity-60')
                     }
                   />
                 </span>
               )}
-            </button>
+            </motion.button>
           );
         })}
       </nav>
-      {activeId === 'audience' && isAudienceOpen && (
-        <div className="absolute top-[74px] left-full h-auto w-[250px] bg-[#000000] text-[#dcdcdc] shadow-lg z-50">
-          {audienceSubItems.map((subItem) => {
-            const isSubActive = subItem.id === activeAudienceSubId;
+      <AnimatePresence>
+        {activeId === 'audience' && isAudienceOpen && (
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            className="absolute top-[74px] left-full h-auto w-[250px] bg-[#000000] text-[#dcdcdc] shadow-2xl rounded-r-2xl border-y border-r border-white/10 z-50"
+          >
+            {audienceSubItems.map((subItem) => {
+              const isSubActive = subItem.id === activeAudienceSubId;
 
-            const openThirdLevelFor = (id: string) => {
-              setActiveAudienceSubId(id);
-              setIsUserMgmtOpen(id === 'users');
-              setIsPostMgmtOpen(id === 'posts');
-              setIsStoryMgmtOpen(id === 'stories');
-              setIsLiveMgmtOpen(id === 'live');
-            };
+              const openThirdLevelFor = (id: string) => {
+                setActiveAudienceSubId(id);
+                setIsUserMgmtOpen(id === 'users');
+                setIsPostMgmtOpen(id === 'posts');
+                setIsStoryMgmtOpen(id === 'stories');
+                setIsLiveMgmtOpen(id === 'live');
+              };
 
-            return (
-              <button
-                key={subItem.id}
-                type="button"
-                onMouseEnter={() => {
-                  openThirdLevelFor(subItem.id);
-                }}
-                onClick={() => {
-                  // Toggle behavior on click: if already open, close; otherwise open
-                  if (activeAudienceSubId === subItem.id) {
-                    setIsUserMgmtOpen(false);
-                    setIsPostMgmtOpen(false);
-                    setIsStoryMgmtOpen(false);
-                    setIsLiveMgmtOpen(false);
-                  } else {
+              return (
+                <motion.button
+                  key={subItem.id}
+                  type="button"
+                  whileHover={{ x: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+                  onMouseEnter={() => {
                     openThirdLevelFor(subItem.id);
-                  }
-                }}
-                className={
-                  'relative flex items-center justify-between px-6 h-11 text-sm font-medium w-full text-left cursor-pointer ' +
-                  (isSubActive ? 'bg-[#1a1a1a]' : 'bg-transparent hover:bg-[#1a1a1a]/60')
-                }
-              >
-                <span>{subItem.label}</span>
-                <img
-                  src={arrowRightIcon}
-                  alt="Section navigation"
+                  }}
+                  onClick={() => {
+                    // Toggle behavior on click: if already open, close; otherwise open
+                    if (activeAudienceSubId === subItem.id) {
+                      setIsUserMgmtOpen(false);
+                      setIsPostMgmtOpen(false);
+                      setIsStoryMgmtOpen(false);
+                      setIsLiveMgmtOpen(false);
+                    } else {
+                      openThirdLevelFor(subItem.id);
+                    }
+                  }}
                   className={
-                    'w-[24px] h-[24px] object-contain ' +
-                    (isSubActive ? '' : 'grayscale opacity-60')
+                    'relative flex items-center justify-between px-6 h-11 text-sm font-medium w-full text-left cursor-pointer transition-colors ' +
+                    (isSubActive ? 'bg-[#1a1a1a]' : 'bg-transparent')
                   }
-                />
-              </button>
-            );
-          })}
-        </div>
-      )}
+                >
+                  <span>{subItem.label}</span>
+                  <img
+                    src={arrowRightIcon}
+                    alt="Section navigation"
+                    className={
+                      'w-[20px] h-[20px] object-contain ' +
+                      (isSubActive ? '' : 'grayscale opacity-60')
+                    }
+                  />
+                </motion.button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <ThirdLevelPanel
         visible={
           activeId === 'audience' &&
@@ -280,7 +305,7 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
         topClass="top-[162px]"
         items={storyManagementSubItems}
         activeId={activeStoryMgmtSubId}
-         onChange={(id) => {
+        onChange={(id) => {
           setActiveStoryMgmtSubId(id);
           if (id === 'all-stories') {
             setCurrentPage('story-management');
@@ -309,7 +334,7 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
       <ThirdLevelPanel
         visible={
           activeId === 'audience' &&
-        isAudienceOpen &&
+          isAudienceOpen &&
           activeAudienceSubId === 'users' &&
           isUserMgmtOpen
         }
@@ -318,7 +343,9 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
         activeId={activeUserMgmtSubId}
         onChange={(id) => {
           setActiveUserMgmtSubId(id);
-          if (id === 'top-influencer') {
+          if (id === 'user-management') {
+            setCurrentPage('user-management');
+          } else if (id === 'top-influencer') {
             setCurrentPage('top-influencer');
           } else if (id === 'audience-mgmt') {
             setCurrentPage('user-profile');
@@ -347,6 +374,6 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
           />
         </button>
       </div>
-    </aside>
+    </motion.aside>
   );
 }

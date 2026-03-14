@@ -5,14 +5,46 @@ import languageIcon from '../assets/languages.svg';
 import downIcon from '../assets/down.svg';
 import userIcon from '../assets/user.svg';
 import arrowDown from '../assets/arrow-down.svg';
+import { useState } from 'react';
+import { NotificationPopup } from './ui/NotificationPopup';
+
+const MOCK_NOTIFICATIONS = [
+  {
+    id: '1',
+    title: 'New Post Reported',
+    message: 'A post by @Sanaya_007 has been reported for community guidelines.',
+    time: '2 min ago',
+    type: 'warning' as const,
+    read: false
+  },
+  {
+    id: '2',
+    title: 'Post Analysis Ready',
+    message: 'The performance report for your latest campaign is now available.',
+    time: '45 min ago',
+    type: 'success' as const,
+    read: false
+  },
+  {
+    id: '3',
+    title: 'System Update',
+    message: 'Server maintenance completed successfully.',
+    time: '2 hours ago',
+    type: 'info' as const,
+    read: true
+  }
+];
 
 export const Header: FC = () => {
   const handleEmailClick = () => {
     // Email click handler
   };
 
-  const handleNotificationsClick = () => {
-    // Notifications click handler
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const handleNotificationsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsNotificationsOpen(!isNotificationsOpen);
   };
 
   const handleLanguageClick = () => {
@@ -36,12 +68,23 @@ export const Header: FC = () => {
               3
             </span>
           </button>
-          <button type="button" onClick={handleNotificationsClick} className="relative w-6 h-6 flex items-center justify-center">
-            <img src={notificationsIcon} alt="Notifications" className="w-4 h-4 object-contain" />
-            <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 rounded-full bg-linear-to-br from-[#8000FF] to-[#FF0091] text-[9px] leading-[14px] text-white text-center">
-              5
-            </span>
-          </button>
+          <div className="relative">
+            <button 
+              type="button" 
+              onClick={handleNotificationsClick} 
+              className={`relative w-6 h-6 flex items-center justify-center transition-transform hover:scale-110 active:scale-95 ${isNotificationsOpen ? 'text-white' : 'text-gray-400'}`}
+            >
+              <img src={notificationsIcon} alt="Notifications" className="w-4 h-4 object-contain" />
+              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 rounded-full bg-linear-to-br from-[#8000FF] to-[#FF0091] text-[9px] leading-[14px] text-white text-center shadow-lg shadow-purple-500/20">
+                5
+              </span>
+            </button>
+            <NotificationPopup 
+              isOpen={isNotificationsOpen} 
+              onClose={() => setIsNotificationsOpen(false)} 
+              notifications={MOCK_NOTIFICATIONS} 
+            />
+          </div>
         </div>
         <div onClick={handleLanguageClick} className="flex items-center gap-2 pl-2 cursor-pointer">
             <img src={languageIcon} alt="Language" className="w-4 h-4 object-contain" />

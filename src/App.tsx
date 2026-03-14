@@ -8,22 +8,27 @@ import { BoostedPost } from './pages/BoostedPost'
 import { LiveUsersList } from './pages/Users/LiveUsersList'
 import { PostManagement } from './pages/PostManagement'
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { StoryManagement } from './pages/StoryManagment'
 import { AudienceManagement } from './pages/Users/AudienceManagment'
 import { Activity } from './pages/Activity'
 import { PageWrapper } from './components/PageWrapper'
+import { UserManagement } from './pages/Users/UserManagement'
 
 import { ForgotPassword } from './pages/ForgotPassword'
 import { Login } from './pages/Login'
 import { OtpVerification } from './pages/OtpVerification'
 import { ResetPassword } from './pages/ResetPassword'
+import { EmailSentSuccess } from './pages/EmailSentSuccess'
+import { Dashboard } from './pages/Dashboard'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [authView, setAuthView] = useState<'login' | 'forgot-password' | 'otp-verification' | 'reset-password'>('login')
+  const [authView, setAuthView] = useState<'login' | 'forgot-password' | 'otp-verification' | 'reset-password' | 'email-sent'>('login')
   const [resetEmail, setResetEmail] = useState('')
-  
+
   const [currentPage, setCurrentPage] = useState<
+    | 'dashboard'
     | 'top-influencer'
     | 'user-profile'
     | 'trending-posts'
@@ -33,6 +38,7 @@ function App() {
     | 'post-management'
     | 'story-management'
     | 'audience-management'
+    | 'user-management'
     | 'activity'
   >('top-influencer')
 
@@ -44,10 +50,13 @@ function App() {
     switch (currentPage) {
       case 'user-profile':
         return <UserProfile />
-      
+
+      case 'user-management':
+        return <UserManagement />
+
       case 'trending-posts':
         return <TrendingPosts />
-      
+
       case 'reported-posts':
         return <ReportPostList />
 
@@ -68,7 +77,10 @@ function App() {
 
       case 'activity':
         return <Activity />
-      
+
+      case 'dashboard':
+        return <Dashboard />
+
       case 'top-influencer':
       default:
         return <TopInfluencers />
@@ -76,22 +88,32 @@ function App() {
   }
 
   if (!isAuthenticated) {
+    if (authView === 'email-sent') {
+      return (
+        <EmailSentSuccess
+          email={resetEmail}
+          onResend={() => setAuthView('otp-verification')}
+          onBackToLogin={() => setAuthView('login')}
+        />
+      )
+    }
+
     if (authView === 'otp-verification') {
       return (
-        <OtpVerification 
-          email={resetEmail} 
+        <OtpVerification
+          email={resetEmail}
           onVerify={(otp) => {
             console.log('Verifying OTP:', otp);
             // Verify OTP success
             setAuthView('reset-password');
-          }} 
+          }}
         />
       )
     }
 
     if (authView === 'reset-password') {
       return (
-        <ResetPassword 
+        <ResetPassword
           onSubmit={(password) => {
             console.log('Password reset to:', password);
             alert('Password reset successful! Please login with new password.');
@@ -103,19 +125,19 @@ function App() {
 
     if (authView === 'forgot-password') {
       return (
-        <ForgotPassword 
-          onBackToLogin={() => setAuthView('login')} 
+        <ForgotPassword
+          onBackToLogin={() => setAuthView('login')}
           onOtpSent={(email) => {
             setResetEmail(email)
-            setAuthView('otp-verification')
+            setAuthView('email-sent')
           }}
         />
       )
     }
     return (
-      <Login 
-        onLogin={handleLogin} 
-        onForgotPassword={() => setAuthView('forgot-password')} 
+      <Login
+        onLogin={handleLogin}
+        onForgotPassword={() => setAuthView('forgot-password')}
       />
     )
   }
@@ -123,11 +145,24 @@ function App() {
   return (
     <PageWrapper>
       <div className="h-screen overflow-hidden overflow-x-auto flex flex-col bg-black text-white">
-        <Header />
-        <div className="flex flex-1 overflow-auto">
-          <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-          <main className="flex-1 relative h-full">
-            {renderPage()}
+        {currentPage !== 'dashboard' && <Header />}
+        <div className="flex flex-1 overflow-auto h-full w-full">
+          {currentPage !== 'dashboard' && (
+            <Sidebar currentPage={currentPage as any} setCurrentPage={setCurrentPage as any} />
+          )}
+          <main className="flex-1 relative h-full flex flex-col w-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentPage}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="h-full flex flex-col w-full"
+              >
+                {renderPage()}
+              </motion.div>
+            </AnimatePresence>
           </main>
         </div>
       </div>
